@@ -1,0 +1,71 @@
+apiVersion: apiextensions.crossplane.io/v1alpha1
+kind: FunctionIO
+config:
+  apiVersion:
+  kind:
+  spec:
+    template: |
+      import (
+        "list"
+      )
+      observed: { composite: {} }
+      desired: {
+        composite: observed.composite & {
+          status: {
+            count: observed.composite.spec.count
+          }
+        }
+        resources: [ for n in list.Range(0, observed.composite.spec.count, 1) {
+          name: "test-\(n)"
+          resource: {
+            apiVersion: "iam.dummy.upbound.io/v1alpha1"
+            kind: "Robot"
+            metadata: {
+              name: "somename-\(n)"
+            }
+            spec: {
+              forProvider: {
+                color: "blue"
+              }
+            }
+          }
+        },
+        if observed.composite.status.enabled {
+          {
+            name: "test-extra"
+            resource: {
+              apiVersion: "iam.dummy.upbound.io/v1alpha1"
+              kind: "Robot"
+              metadata: {
+                name: "somename-extra"
+              }
+              spec: {
+                forProvider: {
+                  color: "blue"
+                }
+              }
+            }
+          }
+        }
+        ]
+      }
+observed:
+  composite:
+    resource:
+      apiVersion: contribfest.crossplane.io/v1alpha1
+      kind: XRobotGroup
+      metadata:
+        name: somename
+      spec:
+        count: 5
+      status:
+        enabled: false
+desired:
+  composite:
+    resource:
+      apiVersion: contribfest.crossplane.io/v1alpha1
+      kind: XRobotGroup
+      metadata:
+        name: somename
+      spec:
+        count: 5
